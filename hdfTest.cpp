@@ -106,11 +106,13 @@ int main (int argc, char** argv) {
 
 	// getting rank and dimension of field
 	int rankField = dspaceRoField.getSimpleExtentDims(0);
+	if (rankField < 1)
+		abort();
 	cout << "   * rank=" << rankField << endl;
 	hsize_t dimField[rankField];
 	dspaceRoField.getSimpleExtentDims(dimField);
 	cout << "   * dims=";
-	for (size_t i = 0; i < rankField; ++i) {
+	for (size_t i = 0; i < static_cast<size_t>(rankField); ++i) {
 		cout << dimField[i] << "x";
 	}
 	cout << endl;
