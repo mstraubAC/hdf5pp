@@ -38,5 +38,5 @@ set(LIBRARIES boost_regex boost_program_options xerces-c png X11 ${PCL_COMMON_LI
 set(LDFLAGS "${LDFLAGS}")
 
 # build modules for subdirectories
-add_executable(hdfTest hdfTest.cpp)
+add_executable(hdfTest hdfTest.cpp Object.cpp File.cpp Group.cpp)
 target_link_libraries(hdfTest ${LIBRARIES} "${LDFLAGS}")
