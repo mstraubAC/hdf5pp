@@ -16,7 +16,8 @@ namespace hdf5
 	class Group: public hdf5::Object
 	{
 		public:
-			typedef typename std::map<std::string, Object> ObjectMap;
+			typedef boost::shared_ptr<Group> Ptr;
+			typedef typename std::map<std::string, Object::Ptr> ObjectMap;
 			typedef ObjectMap::const_iterator ObjectConstIterator;
 			typedef ObjectMap::iterator ObjectIterator;
 
@@ -24,8 +25,8 @@ namespace hdf5
 			virtual ~Group();
 
 
-			inline Object& operator()(const std::string& objectName);
-			inline const Object& operator()(const std::string& objectName) const;
+			inline Object::Ptr operator()(const std::string& objectName);
+			inline const Object::Ptr operator()(const std::string& objectName) const;
 
 			/// returns the number hdf5 objects stored in this one
 			inline size_t getNumObjects() const { return fDaughters.size(); }

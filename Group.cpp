@@ -18,7 +18,7 @@ namespace hdf5
 	Group::Group()
 	{
 		// TODO Auto-generated constructor stub
-
+		fType = Object::ObjectType::Group;
 	}
 
 	Group::~Group()
@@ -27,7 +27,7 @@ namespace hdf5
 	}
 
 
-	inline Object& Group::operator ()(const std::string& objectName)
+	inline Object::Ptr Group::operator ()(const std::string& objectName)
 	{
 		ObjectIterator it = fDaughters.find(objectName);
 		if (it != fDaughters.end())
@@ -36,7 +36,7 @@ namespace hdf5
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
 	}
 
-	inline const Object& Group::operator ()(const std::string& objectName) const
+	inline const Object::Ptr Group::operator ()(const std::string& objectName) const
 	{
 		ObjectConstIterator it = fDaughters.find(objectName);
 		if (it != fDaughters.end())
@@ -48,6 +48,7 @@ namespace hdf5
 	Group::Group(hid_t groupId, const std::string& groupName)
 	{
 		fName = groupName;
+		fType = Object::ObjectType::Group;
 		updateGroup(groupId);
 	}
 
@@ -58,6 +59,8 @@ namespace hdf5
 
 		hsize_t nObj;
 		herr_t err = H5Gget_num_objs(groupId, &nObj);
+		if (err < 0)
+			throw Exception("Group::updateGroup(): Could not retrieve number of objects in group");
 
 		for (size_t iObj = 0; iObj < nObj; ++iObj) {
 			char* groupName;
@@ -69,12 +72,21 @@ namespace hdf5
 				string sGroupName(groupName);
 				delete groupName;
 
+//				string objectPath(fName + "/" + sGroupName);
+//				string objectPath(sGroupName);
+
 				int objType = H5Gget_objtype_by_idx(groupId, iObj);
 				switch(objType) {
 					case H5G_GROUP:
 					{
-						hid_t daughterGroupId = H5Gopen1(groupId, (fName + "/" + sGroupName).c_str());
-						Group g(daughterGroupId, sGroupName);
+//						cout << "Group::updateGroup(" << groupId << "): Found H5G_GROUP (named '" << sGroupName << "')";
+						hid_t daughterGroupId = H5Gopen1(groupId, sGroupName.c_str());
+						if (daughterGroupId < 0) {
+							cerr << "Could not open daughter Group: " << daughterGroupId << endl;
+							continue;
+						}
+//						cout << " with id=" << daughterGroupId << endl;
+						Object::Ptr g(new Group(daughterGroupId, sGroupName));
 						fDaughters[sGroupName] = g;
 					}
 						break;

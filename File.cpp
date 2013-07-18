@@ -139,8 +139,17 @@ namespace hdf5
 
 		cout << " --- Groups in root:" << endl;
 		for (Group::ObjectConstIterator itObj = objectsBegin(); itObj != objectsEnd(); ++itObj) {
-			cout << " * name=" << itObj->first
-				 << endl;
+			cout << " * name=" << itObj->first << endl;
+			if (itObj->second->getType() == Object::Group) {
+				Object::Ptr o = itObj->second;
+				try {
+					Group::Ptr g = boost::dynamic_pointer_cast<Group>(o);
+					cout << "    --> n-Objects: " << g->getNumObjects() << endl;
+				}
+				catch (const std::bad_cast& e) {
+					cout << "Could not cast to Group: " << e.what() << endl;
+				}
+			}
 		}
 
 
