@@ -45,17 +45,17 @@ namespace hdf5
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
 	}
 
-	Group::Group(hid_t groupId, const std::string& groupName)
+	Group::Group(hid_t objectId, const std::string& groupName)
 	{
 		fName = groupName;
 		fType = Object::ObjectType::Group;
-		updateGroup(groupId);
+		updateGroup(objectId);
 	}
 
 	void Group::updateGroup(hid_t groupId)
 	{
 		fDaughters.clear();
-		fGroupId = groupId;
+		fObjectId = groupId;
 
 		hsize_t nObj;
 		herr_t err = H5Gget_num_objs(groupId, &nObj);
@@ -92,18 +92,18 @@ namespace hdf5
 						break;
 					case H5G_DATASET:
 					{
-						throw Exception("Group::updateGroup(): Object not implemente H5G_DATASET");
+						throw Exception("Group::updateGroup(): Object not implemented H5G_DATASET");
 
 					}
 						break;
 					case H5G_TYPE:
-						throw Exception("Group::updateGroup(): Object not implemente H5G_TYPE");
+						throw Exception("Group::updateGroup(): Object not implemented H5G_TYPE");
 						break;
 					case H5G_LINK:
-						throw Exception("Group::updateGroup(): Object not implemente H5G_LINK");
+						throw Exception("Group::updateGroup(): Object not implemented H5G_LINK");
 						break;
 					case H5G_UDLINK:
-						throw Exception("Group::updateGroup(): Object not implemente H5G_UDLINK");
+						throw Exception("Group::updateGroup(): Object not implemented H5G_UDLINK");
 						break;
 				}
 			}

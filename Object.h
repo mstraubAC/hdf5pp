@@ -51,6 +51,9 @@ namespace hdf5
 
 		protected:
 			ObjectType fType;
+			hid_t fObjectId;
+
+			void updateAttributes();
 
 		private:
 			AttributeMap fAttributes;

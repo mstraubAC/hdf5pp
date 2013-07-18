@@ -40,11 +40,10 @@ namespace hdf5
 			inline ObjectIterator objectsEnd() { return fDaughters.end(); }
 
 		protected:
-			Group(hid_t groupId, const std::string& groupName);
+			Group(hid_t objectId, const std::string& groupName);
 			void updateGroup(hid_t groupId);
 
 		private:
-			hid_t fGroupId;
 			ObjectMap fDaughters;
 			std::string fName;
 	};
