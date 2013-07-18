@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <boost/any.hpp>
+#include <boost/shared_ptr.hpp>
 #include <hdf5.h>
 
 namespace hdf5
@@ -20,6 +21,7 @@ namespace hdf5
 	class Object
 	{
 		public:
+			typedef boost::shared_ptr<Object> Ptr;
 			typedef typename std::map<std::string, Attribute> AttributeMap;
 			typedef AttributeMap::const_iterator AttributeConstIterator;
 			typedef AttributeMap::iterator AttributeIterator;
