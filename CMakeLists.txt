@@ -32,11 +32,11 @@ string(REGEX REPLACE "^[ \t]+|[ \t]+$" "" LDFLAGS "${LDFLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Wall -std=c++0x -Wno-deprecated")
 
 ## define libraries and programs
-set(LIBRARIES boost_regex boost_program_options xerces-c png X11 ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES} hdf5_cpp)
+set(LIBRARIES boost_regex boost_program_options xerces-c hdf5)
 
 ## define subdirectories
 set(LDFLAGS "${LDFLAGS}")
 
 # build modules for subdirectories
-add_executable(hdfTest hdfTest.cpp Object.cpp File.cpp Group.cpp)
+add_executable(hdfTest hdfTest.cpp Object.cpp File.cpp Group.cpp Dataset.cpp hdfLLReading.cpp)
 target_link_libraries(hdfTest ${LIBRARIES} "${LDFLAGS}")

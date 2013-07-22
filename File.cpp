@@ -152,16 +152,6 @@ namespace hdf5
 			}
 		}
 
-
-//		ssize_t objCount = H5Fget_obj_count(fFile, H5F_OBJ_ALL);
-//		cout << "H5Fget_obj_count=" << objCount << endl;
-//
-//		hid_t* objIdList = new hid_t[objCount+1];
-//		ssize_t objIdCount = H5Fget_obj_ids(fFile, H5F_OBJ_ALL, objCount + 1, objIdList );
-//		cout << "H5Fget_obj_ids=" << endl;
-//		for (size_t idx = 0; idx < objCount; ++idx) {
-//			cout << "id[" << idx << "]: " << objIdList[idx] << endl;
-//		}
 		return *this;
 	}
 

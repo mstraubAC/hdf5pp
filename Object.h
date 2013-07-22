@@ -8,6 +8,8 @@
 #ifndef HDF5OBJECT_H_
 #define HDF5OBJECT_H_
 
+#include "TypeRegistry.h"
+#include "hdfLLReading.h"
 #include <map>
 #include <string>
 #include <boost/any.hpp>
@@ -16,11 +18,17 @@
 
 namespace hdf5
 {
-	typedef boost::any Attribute;
+	typedef any Attribute;
+
+//	struct Type {
+//			std::type_info typeInfo;
+//			std::string typeName;
+//	};
 
 	class Object
 	{
 		public:
+			typedef std::string TypeName;
 			typedef boost::shared_ptr<Object> Ptr;
 			typedef typename std::map<std::string, Attribute> AttributeMap;
 			typedef AttributeMap::const_iterator AttributeConstIterator;
@@ -34,6 +42,8 @@ namespace hdf5
 
 			Object& operator=(const Object& original);
 
+			const std::string& getName() const { return fName; }
+
 			/// returns type of HdfObject
 			inline ObjectType getType() const { return fType; }
 			inline std::string getTypeName() const;
@@ -41,8 +51,20 @@ namespace hdf5
 			// attributes
 			inline size_t getNumAttributes() const { return fAttributes.size(); }
 			inline bool hasAttribute(const std::string& name) const { return fAttributes.find(name) != fAttributes.end(); }
-			inline Attribute& getAttribute(const std::string& name);
-			inline const Attribute& getAttribute(const std::string& name) const;
+			template <typename T> T& getAttribute(const std::string& name) {
+				AttributeIterator it = fAttributes.find(name);
+				if (it != fAttributes.end())
+					return boost::any_cast<T&>(it->second);
+				else
+					throw std::out_of_range("Attribute \"" + name + "\" not found!");
+			}
+			template <typename T> const T& getAttribute(const std::string& name) const {
+				AttributeConstIterator it = fAttributes.find(name);
+				if (it != fAttributes.end())
+					return boost::any_cast<const T&>(it->second);
+				else
+					throw std::out_of_range("Attribute \"" + name + "\" not found!");
+			}
 			inline void setAttribute(const std::string& name, const Attribute& value) { fAttributes[name] = value; };
 			inline AttributeConstIterator attributesBegin() const { return fAttributes.begin(); }
 			inline AttributeConstIterator attributesEnd() const { return fAttributes.end(); }
@@ -51,9 +73,12 @@ namespace hdf5
 
 		protected:
 			ObjectType fType;
+			std::string fName;
 			hid_t fObjectId;
 
 			void updateAttributes();
+
+			TypeName getStlType(hid_t hdfTypeId) const;
 
 		private:
 			AttributeMap fAttributes;

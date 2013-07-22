@@ -7,6 +7,7 @@
 
 #include "Group.h"
 #include "Exception.h"
+#include "Dataset.h"
 #include <hdf5.h>
 #include <stdexcept>
 
@@ -26,8 +27,17 @@ namespace hdf5
 		// TODO Auto-generated destructor stub
 	}
 
+	Group::Group(hid_t objectId, const std::string& groupName)
+	{
+		fName = groupName;
+		fType = Object::ObjectType::Group;
+		cout << "Group::Group: Calling updateGroup()" << endl;
+		updateGroup(objectId);
+		cout << "Group::Group: Calling updateAttributes()" << endl;
+		updateAttributes();
+	}
 
-	inline Object::Ptr Group::operator ()(const std::string& objectName)
+	Object::Ptr Group::getObject(const std::string& objectName)
 	{
 		ObjectIterator it = fDaughters.find(objectName);
 		if (it != fDaughters.end())
@@ -36,20 +46,13 @@ namespace hdf5
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
 	}
 
-	inline const Object::Ptr Group::operator ()(const std::string& objectName) const
+	const Object::Ptr Group::getObject(const std::string& objectName) const
 	{
 		ObjectConstIterator it = fDaughters.find(objectName);
 		if (it != fDaughters.end())
 			return it->second;
 		else
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
-	}
-
-	Group::Group(hid_t objectId, const std::string& groupName)
-	{
-		fName = groupName;
-		fType = Object::ObjectType::Group;
-		updateGroup(objectId);
 	}
 
 	void Group::updateGroup(hid_t groupId)
@@ -63,38 +66,31 @@ namespace hdf5
 			throw Exception("Group::updateGroup(): Could not retrieve number of objects in group");
 
 		for (size_t iObj = 0; iObj < nObj; ++iObj) {
-			char* groupName;
-			ssize_t nameSize = H5Gget_objname_by_idx(groupId, iObj, groupName, 0);
+			cout << " -------" << endl;
+			char* objName;
+			ssize_t nameSize = H5Gget_objname_by_idx(groupId, iObj, objName, 0);
 			if (nameSize > -1) {
 				nameSize++; // to get termination character, too
-				groupName = new char[nameSize];
-				H5Gget_objname_by_idx(groupId, iObj, groupName, nameSize);
-				string sGroupName(groupName);
-				delete groupName;
+				objName = new char[nameSize];
+				H5Gget_objname_by_idx(groupId, iObj, objName, nameSize);
+				string sObjectName(objName);
+				delete objName;
 
 //				string objectPath(fName + "/" + sGroupName);
 //				string objectPath(sGroupName);
 
 				int objType = H5Gget_objtype_by_idx(groupId, iObj);
+				hid_t daughterId = -1;
+				Object::Ptr objPtr;
 				switch(objType) {
 					case H5G_GROUP:
-					{
-//						cout << "Group::updateGroup(" << groupId << "): Found H5G_GROUP (named '" << sGroupName << "')";
-						hid_t daughterGroupId = H5Gopen1(groupId, sGroupName.c_str());
-						if (daughterGroupId < 0) {
-							cerr << "Could not open daughter Group: " << daughterGroupId << endl;
-							continue;
-						}
-//						cout << " with id=" << daughterGroupId << endl;
-						Object::Ptr g(new Group(daughterGroupId, sGroupName));
-						fDaughters[sGroupName] = g;
-					}
+						daughterId = H5Gopen1(groupId, sObjectName.c_str());
+						objPtr = Object::Ptr(new Group(daughterId, sObjectName));
 						break;
 					case H5G_DATASET:
-					{
-						throw Exception("Group::updateGroup(): Object not implemented H5G_DATASET");
-
-					}
+						daughterId = H5Dopen1(groupId, sObjectName.c_str());
+						cout << "Group::updateGroup(" << groupId << "): Found H5G_DATASET (named '" << sObjectName << "'), id=" << daughterId << endl;
+						objPtr = Object::Ptr(new hdf5::Dataset(daughterId, sObjectName));
 						break;
 					case H5G_TYPE:
 						throw Exception("Group::updateGroup(): Object not implemented H5G_TYPE");
@@ -106,6 +102,12 @@ namespace hdf5
 						throw Exception("Group::updateGroup(): Object not implemented H5G_UDLINK");
 						break;
 				}
+
+				if (daughterId < 0) {
+					cerr << "Could not open daughter '" << sObjectName << "': " << daughterId << endl;
+					continue;
+				}
+				fDaughters[sObjectName] = objPtr;
 			}
 			else {
 				throw Exception("Group::updateGroup(): Could not retrieve objects in group");

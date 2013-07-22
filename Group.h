@@ -25,8 +25,11 @@ namespace hdf5
 			virtual ~Group();
 
 
-			inline Object::Ptr operator()(const std::string& objectName);
-			inline const Object::Ptr operator()(const std::string& objectName) const;
+			Object::Ptr getObject(const std::string& objectName);
+			const Object::Ptr getObject(const std::string& objectName) const;
+
+			Object& operator()(const std::string& objectName) { return *(getObject(objectName).get()); };
+			const Object& operator()(const std::string& objectName) const { return *(getObject(objectName).get()); };
 
 			/// returns the number hdf5 objects stored in this one
 			inline size_t getNumObjects() const { return fDaughters.size(); }
@@ -45,7 +48,6 @@ namespace hdf5
 
 		private:
 			ObjectMap fDaughters;
-			std::string fName;
 	};
 
 } /* namespace hdf5 */

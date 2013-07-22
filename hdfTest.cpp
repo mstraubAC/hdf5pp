@@ -3,49 +3,67 @@
 #include<vector>
 #include<limits>
 #include<boost/multi_array.hpp>
+#include <boost/any.hpp>
 
-#include<H5Cpp.h>
 #include "Object.h"
 #include "File.h"
 
 using namespace std;
 
-template<typename T> class Vector {
-	public:
-	T x;
-	T y;
-	T z;
+//template<typename T> class Vector {
+//	public:
+//	T x;
+//	T y;
+//	T z;
+//
+//	Vector& operator=(const Vector& in) {
+//		if (this != &in) {
+//			x = in.x;
+//			y = in.y;
+//			z = in.z;
+//		}
+//		return *this;
+//	}
+//
+//	static H5::CompType type() {
+//		H5::CompType vecType( sizeof(Vector<T>) );
+//		vecType.insertMember("X", HOFFSET(Vector<T>, x), H5::PredType::NATIVE_DOUBLE);
+//		vecType.insertMember("Y", HOFFSET(Vector<T>, y), H5::PredType::NATIVE_DOUBLE);
+//		vecType.insertMember("Z", HOFFSET(Vector<T>, z), H5::PredType::NATIVE_DOUBLE);
+//		return vecType;
+//	}
+//
+//	void write(H5::H5File& file, const std::string& name) {
+//
+//	};
+//};
 
-	Vector& operator=(const Vector& in) {
-		if (this != &in) {
-			x = in.x;
-			y = in.y;
-			z = in.z;
-		}
-		return *this;
-	}
 
-	static H5::CompType type() {
-		H5::CompType vecType( sizeof(Vector<T>) );
-		vecType.insertMember("X", HOFFSET(Vector<T>, x), H5::PredType::NATIVE_DOUBLE);
-		vecType.insertMember("Y", HOFFSET(Vector<T>, y), H5::PredType::NATIVE_DOUBLE);
-		vecType.insertMember("Z", HOFFSET(Vector<T>, z), H5::PredType::NATIVE_DOUBLE);
-		return vecType;
-	}
-
-	void write(H5::H5File& file, const std::string& name) {
-				
-	};
-};
 
 int main (int argc, char** argv) {
 	cout << "HDF5 Test program for c++ and compound datatypes" << endl;
-	
+
 	hdf5::File file = hdf5::OpenFile("test.h5").readWrite();
+	cout << " ========= File has been opened ========= " << endl;
 	cout << "File size    = " << file.getFileSize() << endl;
 	cout << "Free space   = " << file.getFreeSpace() << endl;
 	cout << "# Attributes = " << file.getNumAttributes() << endl;
 	cout << "# Objects    = " << file.getNumObjects() << endl;
+	cout << " ---" << endl;
+	const hdf5::Object& testTable = dynamic_cast<hdf5::Group&>(file("TestGroup"))("testData 2d");
+	cout << "DataSet: " << testTable.getName() << endl;
+	cout << "     --> #Attributes=" << testTable.getNumAttributes() << endl;
+	for (hdf5::Object::AttributeConstIterator it = testTable.attributesBegin(); it != testTable.attributesEnd(); ++it) {
+		cout << "         * " << it->first << ": " << it->second << endl;
+
+	}
+//	group->getObject("testData 2d");
+
+
+	boost::any x;
+	x = double(5.3);
+
+	cout << "any: " << boost::any_cast<double>(x) << endl;
 //	// opening file
 //	H5::H5File outFile("test.h5", H5F_ACC_TRUNC);
 //
