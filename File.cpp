@@ -17,8 +17,7 @@ namespace hdf5
 {
 	File::File(): fFile(-1)
 	{
-		// TODO Auto-generated constructor stub
-
+		fType = ObjectType::File;
 	}
 
 	File::~File()

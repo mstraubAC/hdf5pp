@@ -8,6 +8,7 @@
 #include "Group.h"
 #include "Exception.h"
 #include "Dataset.h"
+#include "File.h"
 #include <hdf5.h>
 #include <stdexcept>
 
@@ -24,14 +25,19 @@ namespace hdf5
 
 	Group::~Group()
 	{
-		// TODO Auto-generated destructor stub
+		// since all daughters must be closed before we close our own group
+		// we have to clear the map on our own
+		fDaughters.clear();
+		if (fType == ObjectType::Group) {
+			H5Gclose(fObjectId);
+		}
 	}
 
 	Group::Group(hid_t objectId, const std::string& groupName)
 	{
 		fName = groupName;
 		fType = Object::ObjectType::Group;
-		cout << "Group::Group: Calling updateGroup()" << endl;
+		cout << "Group::Group: Calling updateGroup(" << groupName << ", " << objectId << ")" << endl;
 		updateGroup(objectId);
 		cout << "Group::Group: Calling updateAttributes()" << endl;
 		updateAttributes();
@@ -55,6 +61,19 @@ namespace hdf5
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
 	}
 
+	bool Group::deleteObject(const std::string& name)
+	{
+		if (!hasObject(name)) {
+			throw Exception("Group::deleteObject: Object with name '" + name + "' does not exist");
+		}
+
+		// this closes the object and removes it from internal list
+		fDaughters.erase(name);
+
+		// remove the object from the file
+		return H5Gunlink(fObjectId, name.c_str()) > -1;
+	}
+
 	void Group::updateGroup(hid_t groupId)
 	{
 		fDaughters.clear();
@@ -75,9 +94,6 @@ namespace hdf5
 				H5Gget_objname_by_idx(groupId, iObj, objName, nameSize);
 				string sObjectName(objName);
 				delete objName;
-
-//				string objectPath(fName + "/" + sGroupName);
-//				string objectPath(sGroupName);
 
 				int objType = H5Gget_objtype_by_idx(groupId, iObj);
 				hid_t daughterId = -1;

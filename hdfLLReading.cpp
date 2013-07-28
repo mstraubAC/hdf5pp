@@ -1,4 +1,8 @@
 #include "hdfLLReading.h"
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <boost/preprocessor/repetition/repeat.hpp>
 
 #define BASIC_TYPE(I) BASIC_TYPE ## I
 
@@ -19,23 +23,23 @@
 #define BASIC_TYPE_CNT 13
 
 #define ANYCAST_BASIC(TYPE, SRC, DST) if (SRC.type() == typeid(TYPE)) DST << boost::any_cast<TYPE>(SRC);
-#define ANYCAST_CONTAINER(CONTAINER, SRC, DST) ;
+
 
 namespace std {
+	// this is just a convenience stream operator to pipe c++ default types
 	std::ostream& operator<<(std::ostream& os, const boost::any& in) {
-		ANYCAST(double, in, os)
-		else ANYCAST(float, in, os)
-		else ANYCAST(std::string, in, os)
-		else ANYCAST(uint8_t, in, os)
-		else ANYCAST(uint16_t, in, os)
-		else ANYCAST(uint32_t, in, os)
-		else ANYCAST(uint64_t, in, os)
-		else ANYCAST(int8_t, in, os)
-		else ANYCAST(int16_t, in, os)
-		else ANYCAST(int32_t, in, os)
-		else ANYCAST(int64_t, in, os)
-		else ANYCAST(uint8_t, in, os)
-
+		ANYCAST_BASIC(double, in, os)
+		else ANYCAST_BASIC(float, in, os)
+		else ANYCAST_BASIC(std::string, in, os)
+		else ANYCAST_BASIC(uint8_t, in, os)
+		else ANYCAST_BASIC(uint16_t, in, os)
+		else ANYCAST_BASIC(uint32_t, in, os)
+		else ANYCAST_BASIC(uint64_t, in, os)
+		else ANYCAST_BASIC(int8_t, in, os)
+		else ANYCAST_BASIC(int16_t, in, os)
+		else ANYCAST_BASIC(int32_t, in, os)
+		else ANYCAST_BASIC(int64_t, in, os)
+		else ANYCAST_BASIC(uint8_t, in, os)
 		return os;
 	}
 }
@@ -121,19 +125,19 @@ namespace hdf5 {
 				if (sign == H5T_SGN_NONE) {
 					// unsigned integers
 					switch (data.precision) {
-						case 8:  result = convertToCPP<int8_t>(data); break;
-						case 16: result = convertToCPP<int16_t>(data); break;
-						case 32: result = convertToCPP<int32_t>(data); break;
-						case 64: result = convertToCPP<int64_t>(data); break;
+						case 8:  result = convertToCPP<uint8_t>::get(data); break;
+						case 16: result = convertToCPP<uint16_t>::get(data); break;
+						case 32: result = convertToCPP<uint32_t>::get(data); break;
+						case 64: result = convertToCPP<uint64_t>::get(data); break;
 					}
 				}
 				else if (sign == H5T_SGN_2) {
 					// signed integers
 					switch (data.precision) {
-						case 8:  result = convertToCPP<uint8_t>(data); break;
-						case 16: result = convertToCPP<uint16_t>(data); break;
-						case 32: result = convertToCPP<uint32_t>(data); break;
-						case 64: result = convertToCPP<uint64_t>(data); break;
+						case 8:  result = convertToCPP<int8_t>::get(data); break;
+						case 16: result = convertToCPP<int16_t>::get(data); break;
+						case 32: result = convertToCPP<int32_t>::get(data); break;
+						case 64: result = convertToCPP<int64_t>::get(data); break;
 					}
 				}
 				else {
@@ -144,10 +148,10 @@ namespace hdf5 {
 			case H5T_FLOAT:
 			{
 				if (data.precision == 32) {
-					result = convertToCPP<float>(data); break;
+					result = convertToCPP<float>::get(data); break;
 				}
 				else if (data.precision == 64) {
-					result = convertToCPP<double>(data); break;
+					result = convertToCPP<double>::get(data); break;
 				}
 				else {
 					std::stringstream ss;
@@ -157,16 +161,15 @@ namespace hdf5 {
 			}
 				break;
 			case H5T_STRING:
-//				result = convertToCPP<std::string>(data); break;
-//				H5T_cset_t charSet = H5Tget_cset(hdfTypeId);
-//				if (charSet != 0) {
-//					std::stringstream ss;
-//					ss << "Object::getStlType: Unknown character encoding type '" << charSet << "'. Currently only US-ASCII is supported.";
-//					throw Exception(ss);
-//				}
-//				size = H5Tget_precision(hdfTypeId) * sizeof(char);
-//				for (size_t i = 0; i < rank; ++i) size *= dimensions[i];
-//				data = malloc(size);
+			{
+				H5T_cset_t charSet = H5Tget_cset(data.dataType);
+				if (charSet != 0) {
+					std::stringstream ss;
+					ss << "Object::getStlType: Unknown character encoding type '" << charSet << "'. Currently only US-ASCII is supported.";
+					throw Exception(ss);
+				}
+				result = convertToCPP<char*>::get(data);
+			}
 				break;
 			default:
 				throw Exception("Object::getStorage: Unimplemented HDF5 datatype");
@@ -175,4 +178,43 @@ namespace hdf5 {
 		return result;
 
 	}
+
+	std::string getTypeClassName(hid_t typeID)
+	{
+		switch(H5Tget_class(typeID)) {
+			case H5T_INTEGER: return "H5T_INTEGER";
+			case H5T_FLOAT: return "H5T_FLOAT";
+			case H5T_STRING: return "H5T_STRING";
+			case H5T_TIME: return "H5T_TIME";
+			case H5T_BITFIELD: return "H5T_BITFIELD";
+			case H5T_OPAQUE: return "H5T_OPAQUE";
+			case H5T_COMPOUND:
+			{
+				std::stringstream ss;
+				ss << "H5T_COMPOUND";
+				int nMembers = H5Tget_nmembers(typeID);
+				if (nMembers < 0) {
+					ss << ": Could not retrieve members";
+					return ss.str();
+				}
+				for (size_t iMember = 0; iMember < static_cast<size_t>(nMembers); ++iMember) {
+					char* memberName = H5Tget_member_name(typeID, iMember);
+					hid_t memberType = H5Tget_member_type(typeID, iMember);
+					ss << std::endl;
+					ss << "    * " << memberName << ": " << getTypeClassName(memberType);
+					free(memberName);
+				}
+				ss << std::endl;
+				return ss.str();
+			}
+				break;
+			case H5T_REFERENCE: return "H5T_REFERENCE";
+			case H5T_ENUM: return "H5T_ENUM";
+			case H5T_VLEN: return "H5T_VLEN";
+			case H5T_ARRAY: return "H5T_ARRAY";
+			default:
+				return "UNKNOWN";
+		}
+	}
+
 }

@@ -9,6 +9,9 @@
 #define HDF5_GROUP_H_
 
 #include "Object.h"
+#include "Dataset.h"
+#include "DataConverter.h"
+#include <boost/concept_check.hpp>
 
 namespace hdf5
 {
@@ -17,6 +20,7 @@ namespace hdf5
 	{
 		public:
 			typedef boost::shared_ptr<Group> Ptr;
+			typedef boost::shared_ptr<const Group> ConstPtr;
 			typedef typename std::map<std::string, Object::Ptr> ObjectMap;
 			typedef ObjectMap::const_iterator ObjectConstIterator;
 			typedef ObjectMap::iterator ObjectIterator;
@@ -41,6 +45,41 @@ namespace hdf5
 
 			inline ObjectIterator objectsBegin() { return fDaughters.begin(); }
 			inline ObjectIterator objectsEnd() { return fDaughters.end(); }
+
+
+			/**
+			 * Unlinks the an object from our namespace
+			 *
+			 * According to the current HDF5 documentation space
+			 * is freed if all references to this object are closed.
+			 * The freed memory is only reusable before closing the file.
+			 *
+			 * @param name of object to remove
+			 * @return True if unlinking was successfull
+			 */
+			bool deleteObject(const std::string& name);
+
+			// subobject creation interface
+			template<typename T> Dataset::Ptr createDataset(const std::string& name, T& src) {
+				// throw an exception, if it already exists
+				if (hasObject(name)) {
+					throw Exception("Could not create dataset '" + name + "' because it already exists");
+				}
+
+				hid_t memType =  ContainerInterface<T>::hdfElementType();
+				hid_t fileType = memType;
+				hid_t space = ContainerInterface<T>::hdfSpace(src);
+
+				hid_t dsId = H5Dcreate2(fObjectId, name.c_str(), fileType, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+				if (dsId < 0) {
+					throw Exception("Could not create dataset '" + name + "'");
+				}
+				Dataset::Ptr dsPtr = Dataset::Ptr(new hdf5::Dataset(dsId, name));
+				dsPtr->write(src);
+				fDaughters[name] = dsPtr;
+				return dsPtr;
+			}
+			Group::Ptr createGroup(std::string& name);
 
 		protected:
 			Group(hid_t objectId, const std::string& groupName);

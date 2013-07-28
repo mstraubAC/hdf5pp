@@ -64,7 +64,7 @@ namespace hdf5
 				else
 					throw std::out_of_range("Attribute \"" + name + "\" not found!");
 			}
-			inline void setAttribute(const std::string& name, const Attribute& value) { fAttributes[name] = value; };
+//			inline void setAttribute(const std::string& name, const Attribute& value) { fAttributes[name] = value; };
 			inline AttributeConstIterator attributesBegin() const { return fAttributes.begin(); }
 			inline AttributeConstIterator attributesEnd() const { return fAttributes.end(); }
 			inline AttributeIterator attributesBegin() { return fAttributes.begin(); }

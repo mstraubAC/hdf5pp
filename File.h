@@ -48,7 +48,7 @@ namespace hdf5
 	{
 		public:
 			File();
-			File(const OpenFile& fileMode): fFile(-1) { openFile(fileMode); }
+			File(const OpenFile& fileMode): fFile(-1) { fType = ObjectType::File; openFile(fileMode); }
 			File(const File& original) { operator=(original); };
 
 			/**

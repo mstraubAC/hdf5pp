@@ -31,10 +31,7 @@ namespace hdf5
 		operator=(original);
 	}
 
-	Object::~Object()
-	{
-		// TODO Auto-generated destructor stub
-	}
+	Object::~Object() {}
 
 	Object& Object::operator=(const Object& original)
 	{
