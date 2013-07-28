@@ -5,8 +5,8 @@
  *      Author: marcel
  */
 
-#ifndef HDF5FILE_H_
-#define HDF5FILE_H_
+#ifndef HDF5_FILE_H_
+#define HDF5_FILE_H_
 
 #include "Group.h"
 #include <hdf5.h>

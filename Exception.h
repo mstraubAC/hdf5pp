@@ -5,8 +5,8 @@
  *      Author: marcel
  */
 
-#ifndef EXCEPTION_H_
-#define EXCEPTION_H_
+#ifndef HDF5_EXCEPTION_H_
+#define HDF5_EXCEPTION_H_
 
 #include <exception>
 #include <string>

@@ -7,8 +7,8 @@
  *      Author: marcel
  */
 
-#ifndef HDFLLREADING_H_
-#define HDFLLREADING_H_
+#ifndef HDF5_HDFLLREADING_H_
+#define HDF5_HDFLLREADING_H_
 
 #include "Exception.h"
 #include <hdf5.h>

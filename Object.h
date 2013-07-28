@@ -5,10 +5,9 @@
  *      Author: marcel
  */
 
-#ifndef HDF5OBJECT_H_
-#define HDF5OBJECT_H_
+#ifndef HDF5_OBJECT_H_
+#define HDF5_OBJECT_H_
 
-#include "TypeRegistry.h"
 #include "hdfLLReading.h"
 #include <map>
 #include <string>
