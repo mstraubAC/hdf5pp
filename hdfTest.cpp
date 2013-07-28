@@ -57,13 +57,64 @@ int main (int argc, char** argv) {
 		cout << "         * " << it->first << ": " << it->second << endl;
 
 	}
+	const hdf5::Dataset& dsTest = dynamic_cast<const hdf5::Dataset&>(testTable);
+	boost::multi_array<int32_t, 2> array;
+	dsTest.read(array);
+	for (size_t x = 0; x < array.shape()[0]; ++x) {
+		for (size_t y = 0; y < array.shape()[0]; ++y) {
+			cout << array[x][y] << ", ";
+		}
+		cout << endl;
+	}
 //	group->getObject("testData 2d");
+
+	cout << "Creating boost::multi_array<double, 2>" << endl;
+	boost::multi_array<double, 2> arrayOut(boost::extents[10][10]);
+	for (size_t x = 0; x < arrayOut.shape()[0]; ++x) {
+		for (size_t y = 0; y < arrayOut.shape()[0]; ++y) {
+			arrayOut[x][y] = x*y;
+		}
+	}
+
+	try {
+		cout << "Delete /TestGroup/multArray_WriteTest if it exists" << endl;
+		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("multArray_WriteTest");
+	}
+	catch (const hdf5::Exception& e) {
+	}
+
+	cout << "Writeout dataset" << endl;
+	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("multArray_WriteTest", arrayOut);
+	cout << "Writeout dataset --> DONE" << endl;
+
+	//
+	cout << " ########### writing compound data type" << endl;
+	boost::multi_array<hdf5::Vector, 2> arrayOutCompound(boost::extents[10][10]);
+	for (size_t x = 0; x < arrayOutCompound.shape()[0]; ++x) {
+		for (size_t y = 0; y < arrayOutCompound.shape()[0]; ++y) {
+			arrayOutCompound[x][y] = hdf5::Vector(x, y, x*y);
+		}
+	}
+	try {
+		cout << "Delete /TestGroup/multArray_WriteTestCompound if it exists" << endl;
+		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("multArray_WriteTestCompound");
+	}
+	catch (const hdf5::Exception& e) {
+	}
+
+	cout << "Writeout compound dataset" << endl;
+	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("multArray_WriteTestCompound", arrayOutCompound);
+	cout << "Writeout dataset --> DONE" << endl;
+
 
 
 	boost::any x;
 	x = double(5.3);
 
 	cout << "any: " << boost::any_cast<double>(x) << endl;
+
+	cout << " ======= THE END ======= " << endl;
+
 //	// opening file
 //	H5::H5File outFile("test.h5", H5F_ACC_TRUNC);
 //
