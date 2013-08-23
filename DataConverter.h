@@ -36,6 +36,10 @@ namespace hdf5 {
 			inline double getX() const { return fX; }
 			inline double getY() const { return fY; }
 			inline double getZ() const { return fZ; }
+
+			inline Vector& setX(double in) { fX = in; return *this; }
+			inline Vector& setY(double in) { fY = in; return *this; }
+			inline Vector& setZ(double in) { fZ = in; return *this; }
 	};
 
 	template<> struct DataType<Vector> {
@@ -56,6 +60,10 @@ namespace hdf5 {
 				out.X = in.getX();
 				out.Y = in.getY();
 				out.Z = in.getZ();
+			}
+
+			static void assignFromPOD(const PODType& in, ElementType& out) {
+				out.setX(in.X).setY(in.Y).setZ(in.Z);
 			}
 	};
 

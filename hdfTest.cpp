@@ -1,5 +1,6 @@
 #include<string>
 #include<iostream>
+#include<sstream>
 #include<vector>
 #include<limits>
 #include<boost/multi_array.hpp>
@@ -104,6 +105,77 @@ int main (int argc, char** argv) {
 
 	cout << "Writeout compound dataset" << endl;
 	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("multArray_WriteTestCompound", arrayOutCompound);
+	cout << "Writeout dataset --> DONE" << endl;
+
+	// std::vector
+	cout << " ########### writing vector" << endl;
+	vector<double> testVec;
+	for (size_t x = 0; x < 10; ++x) {
+		testVec.push_back(x);
+	}
+	try {
+		cout << "Delete /TestGroup/testVec if it exists" << endl;
+		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("testVec");
+	}
+	catch (const hdf5::Exception& e) {
+	}
+
+	cout << "Writeout" << endl;
+	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("testVec", testVec);
+	cout << "Writeout dataset --> DONE" << endl;
+
+	// std::list
+	cout << " ########### writing list" << endl;
+	list<double> testList;
+	for (size_t x = 0; x < 10; ++x) {
+		testList.push_back(x);
+	}
+	try {
+		cout << "Delete /TestGroup/testList if it exists" << endl;
+		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("testList");
+	}
+	catch (const hdf5::Exception& e) {
+	}
+
+	cout << "Writeout" << endl;
+	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("testList", testList);
+	cout << "Writeout dataset --> DONE" << endl;
+
+	// std::map
+	// std::map
+	cout << " ########### writing map<double, int>" << endl;
+	map<double, int> testMap;
+	for (size_t x = 0; x < 10; ++x) {
+		testMap[double(x)] = x;
+	}
+	try {
+		cout << "Delete /TestGroup/testList if it exists" << endl;
+		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("testMap");
+	}
+	catch (const hdf5::Exception& e) {
+	}
+
+	cout << "Writeout" << endl;
+	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("testMap", testMap);
+	cout << "Writeout dataset --> DONE" << endl;
+
+	cout << " ########### writing map<string, int>" << endl;
+	map<string, int> testMapStr;
+	for (size_t x = 0; x < 10; ++x) {
+		stringstream a;
+		a << x;
+		testMapStr[a.str()] = x;
+	}
+	testMapStr["Katzenklo"] = 2222;
+	try {
+		cout << "Delete /TestGroup/testList if it exists" << endl;
+		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("testMapStr");
+	}
+	catch (const hdf5::Exception& e) {
+	}
+
+	cout << "Writeout" << endl;
+	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("testMapStr", testMapStr);
 	cout << "Writeout dataset --> DONE" << endl;
 
 
