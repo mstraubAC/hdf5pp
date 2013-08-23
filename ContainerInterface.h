@@ -131,9 +131,9 @@ namespace hdf5 {
 
 					H5Dwrite(dataSet, DataType<ElementType>::hdfType(), H5S_ALL, H5S_ALL, H5P_DEFAULT, dst.data());
 
-//					for (size_t i = 0; i < nElements; ++i) {
-//						DataType<ElementType>::freePOD(dst[i]);
-//					}
+					for (size_t i = 0; i < nElements; ++i) {
+						DataType<ElementType>::freePOD(dst[i]);
+					}
 				}
 				else {
 					// this allows simple write
@@ -180,15 +180,9 @@ namespace hdf5 {
 				}
 
 				for (size_t i = 0; i < dst.size(); ++i) {
-					if (DataType<ElementType>::isStructType() && !DataType<ElementType>::isPOD()) {
-						// .. it target is not a POD we need to translate ..
-						DataType<ElementType>::assignFromPOD(rawData[i], dst[i]);
-					}
-					else {
-						// .. otherwise we can just copy it from the raw memory
-						//TODO: this is very dangerous if ElementType is a pointer!!!
-						dst[i] = rawData[i];
-					}
+					// .. it target is not a POD we need to translate ..
+					DataType<ElementType>::assignFromPOD(rawData[i], dst[i]);
+					DataType<ElementType>::freePOD(rawData[i]);
 				}
 
 				free(rawData);
@@ -266,28 +260,21 @@ namespace hdf5 {
 
 
 				// check type of elements stored in container
-				bool complexType = DataType<ElementType>::isStructType() && !DataType<ElementType>::isPOD();
 				typedef typename DataType<ElementType>::PODType POD;
 				size_t nElements = src.size();
 				size_t item = 0;
 				POD* tmp = (POD*) malloc( DataType<ElementType>::size() * nElements);
 
 				for (typename Container::const_iterator it = src.begin(); it != src.end(); ++it) {
-					if (complexType) {
-						DataType<ElementType>::assignToPOD(*it, tmp[item]);
-					}
-					else {
-						tmp[item] = *it;
-					}
-
+					DataType<ElementType>::assignToPOD(*it, tmp[item]);
 					++item;
 				}
 
 				H5Dwrite(dataSet, DataType<ElementType>::hdfType(), H5S_ALL, H5S_ALL, H5P_DEFAULT, tmp);
 
-//				for (size_t i = 0; i < item; ++i) {
-//					DataType<POD>::freePOD(tmp[i]);
-//				}
+				for (size_t i = 0; i < item; ++i) {
+					DataType<POD>::freePOD(tmp[i]);
+				}
 				free(tmp);
 			}
 
@@ -324,16 +311,10 @@ namespace hdf5 {
 				}
 
 				for (size_t i = 0; i < dst.size(); ++i) {
-					if (DataType<ElementType>::isStructType() && !DataType<ElementType>::isPOD()) {
-						// .. it target is not a POD we need to translate ..
-						ElementType tmp;
-						DataType<ElementType>::assignFromPOD(rawData[i], tmp);
-					}
-					else {
-						// .. otherwise we can just copy it from the raw memory
-						//TODO: this is very dangerous if ElementType is a pointer!!!
-						dst.push_back(rawData[i]);
-					}
+					ElementType tmp;
+					DataType<ElementType>::assignFromPOD(rawData[i], tmp);
+					DataType<ElementType>::freePOD(rawData[i]);
+					dst.push_back(tmp);
 				}
 
 				free(rawData);
@@ -378,7 +359,7 @@ namespace hdf5 {
 				return H5Screate_simple(1, dims, 0);
 			}
 
-			static bool checkCompatibility(const Container& src, hid_t dataSet, hid_t hdfMemLayout) {
+			static bool checkCompatibility(const Container& src, hid_t dataSet, hid_t hdfMemLayout, bool sizeTest = true) {
 				const size_t NumDims = 1;
 				// check if type of the target dataset and the one stored in this container matches
 				htri_t type = H5Tequal(DataType<ElementPOD>::hdfType(), H5Dget_type(dataSet));
@@ -407,7 +388,7 @@ namespace hdf5 {
 				// freeing memory
 				free(dims);
 
-				if (!sizeFit) {
+				if (!sizeFit && sizeTest) {
 					throw Exception("Dimensions between dataset and provided container does not match");
 				}
 
@@ -433,10 +414,10 @@ namespace hdf5 {
 				H5Dwrite(dataSet, DataType<ElementPOD>::hdfType(), H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
 
 				// first free POD if necessary (will be handled by each type handler)
-//				for (size_t i = 0; i < iBuf; ++i) {
-//					DataType<Key>::freePOD(buffer->k);
-//					DataType<Value>::freePOD(buffer->v);
-//				}
+				for (size_t i = 0; i < iBuf; ++i) {
+					DataType<Key>::freePOD(buffer[i].k);
+					DataType<Value>::freePOD(buffer[i].v);
+				}
 				free(buffer);
 			}
 
@@ -444,7 +425,7 @@ namespace hdf5 {
 				const size_t NumDims = 1;
 				std::cout << "hdf5::ContainerInterface< std::mapr<..> >::read()" << std::endl;
 
-				if (NumDims != H5Sget_simple_extent_ndims(dataSpace)) {
+				if (static_cast<int>(NumDims) != H5Sget_simple_extent_ndims(dataSpace)) {
 					throw Exception("hdf5::ContainerInterface< std::map<..> >::read(): Dimensions of HDF5 and target container does not match");
 				}
 
@@ -455,16 +436,20 @@ namespace hdf5 {
 				delete dims;
 
 				// checking compatibility of hdf5 target and the c++ src object
-				if (!checkCompatibility(dst, dataSet, dataSpace)) {
+				if (!checkCompatibility(dst, dataSet, dataSpace, false)) {
 					throw Exception("hdf5::ContainerInterface< std::map<..> >::read(): Type compatibility check failed");
 				}
 
 				// check if key or value is not a POD
-				bool keyComplex = DataType<Key>::isPOD() && !DataType<Key>::isPOD();
-				bool valueComplex = DataType<Value>::isPOD() && !DataType<Value>::isPOD();
+				hsize_t normalLen = nElements * DataType<ElementPOD>::size();
+				hsize_t variableLen;
+				herr_t status = H5Dvlen_get_buf_size(dataSet, DataType<ElementPOD>::hdfType(), dataSpace, &variableLen);
+				if (status < 0) {
+					throw Exception("hdf5::ContainerInterface< std::map<..> >::read(): Error while determining necessary memory buffer size");
+				}
 
-				ElementPOD* buffer = (ElementPOD*) malloc(dst.size() * DataType<ElementPOD>::size());
-				herr_t status = H5Dread(dataSet, DataType<ElementPOD>::hdfType(), H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
+				ElementPOD* buffer = (ElementPOD*) malloc( std::max(variableLen, normalLen) );
+				status = H5Dread(dataSet, DataType<ElementPOD>::hdfType(), H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
 				if (status < 0) {
 					free(buffer);
 					throw Exception("hdf5::ContainerInterface< std::map<..> >::read(): Error while reading data from file");
@@ -473,22 +458,15 @@ namespace hdf5 {
 				for (size_t i = 0; i < nElements; ++i) {
 					Key k;
 					Value v;
-					if (keyComplex) {
-						DataType<Key>::assignFromPOD(buffer[i].k, k);
-					}
-					else {
-						k = buffer[i]->k;
-					}
-
-					if (valueComplex) {
-						DataType<Value>::assignFromPOD(buffer[i].v, v);
-					}
-					else {
-						v = buffer[i]->v;
-					}
+					DataType<Key>::assignFromPOD(buffer[i].k, k);
+					DataType<Value>::assignFromPOD(buffer[i].v, v);
 					dst[k] = v;
+
+					DataType<Key>::freePOD(buffer[i].k);
+					DataType<Value>::freePOD(buffer[i].v);
 				}
 
+				std::cout << "ContainerInterface< std::map<Key, Value, ..> >::read(..): freeing buffer" << std::endl;
 				free(buffer);
 			}
 	};
@@ -624,10 +602,10 @@ namespace hdf5 {
 
 				H5Dwrite(ds, DataType<ElementType>::hdfType(), H5S_ALL, H5S_ALL, H5P_DEFAULT, dst.data());
 
-//				for (size_t i = 0; i < nElements; ++i) {
-//					Coordinate x = getArrayCoordinate(src, i);
-//					DataType<POD>::freePOD(dst(x));
-//				}
+				for (size_t i = 0; i < nElements; ++i) {
+					Coordinate x = getArrayCoordinate(src, i);
+					DataType<POD>::freePOD(dst(x));
+				}
 			}
 			else {
 				// this allows simple write
@@ -678,16 +656,8 @@ namespace hdf5 {
 			for (size_t i = 0; i < nElements; ++i) {
 				// assuming c-data order
 				Coordinate x = getArrayCoordinate(dst, i);
-
-				if (DataType<ElementType>::isStructType() && !DataType<ElementType>::isPOD()) {
-					// .. it target is not a POD we need to translate ..
-					DataType<ElementType>::assignFromPOD(rawData[i], dst(x));
-				}
-				else {
-					// .. otherwise we can just copy it from the raw memory
-					//TODO: this is very dangerous if ElementType is a pointer!!!
-					dst(x) = rawData[i];
-				}
+				DataType<ElementType>::assignFromPOD(rawData[i], dst(x));
+				DataType<ElementType>::freePOD(rawData[i]);
 			}
 
 			free(rawData);

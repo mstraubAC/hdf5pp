@@ -160,13 +160,15 @@ int main (int argc, char** argv) {
 	cout << "Writeout dataset --> DONE" << endl;
 
 	cout << " ########### writing map<string, int>" << endl;
-	map<string, int> testMapStr;
-	for (size_t x = 0; x < 10; ++x) {
+	map<string, double> testMapStr;
+	for (size_t x = 0; x < 16; ++x) {
 		stringstream a;
-		a << x;
+		a << "Diese Zahl ist in hex " << hex << x << dec;
 		testMapStr[a.str()] = x;
 	}
-	testMapStr["Katzenklo"] = 2222;
+	testMapStr["Katzenklo, Katzenkla. Ja das macht die Katze froh. Wir gruessen Helge S."] = 2222;
+	testMapStr["Die Antwort auf alles"] = 42;
+	testMapStr["zz top and la Grange"] = 23;
 	try {
 		cout << "Delete /TestGroup/testList if it exists" << endl;
 		dynamic_cast<hdf5::Group&>(file("TestGroup")).deleteObject("testMapStr");
@@ -178,12 +180,12 @@ int main (int argc, char** argv) {
 	dynamic_cast<hdf5::Group&>(file("TestGroup")).createDataset("testMapStr", testMapStr);
 	cout << "Writeout dataset --> DONE" << endl;
 
-
-
-	boost::any x;
-	x = double(5.3);
-
-	cout << "any: " << boost::any_cast<double>(x) << endl;
+	cout << " --- Clearing map<string, int>" << endl;
+	testMapStr.clear();
+	dynamic_cast<hdf5::Dataset&>(dynamic_cast<hdf5::Group&>(file("TestGroup"))("testMapStr")).read(testMapStr);
+	for (map<string, double>::const_iterator it = testMapStr.begin(); it != testMapStr.end(); ++it) {
+		cout << " * " << it->first << " --> " << it->second << endl;
+	}
 
 	cout << " ======= THE END ======= " << endl;
 
