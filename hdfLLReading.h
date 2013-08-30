@@ -59,7 +59,7 @@ namespace hdf5 {
 	template<typename T> struct convertToCPP {
 			static any get(const LowLevelData& data) {
 				any result;
-				if (data.dimensions[0] == 1) {
+				if (data.rank == 0) {
 					T* x = static_cast<T*>(data.memory);
 					result = T(*x);
 				}
