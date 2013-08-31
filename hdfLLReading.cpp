@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <map>
+#include "Exception.h"
 #include <boost/preprocessor/repetition/repeat.hpp>
 
 #define BASIC_TYPE(I) BASIC_TYPE ## I
@@ -45,15 +47,27 @@ namespace std {
 }
 
 namespace hdf5 {
+	LowLevelData::LowLevelData(hid_t attributeId) :
+			attrId(attributeId),
+			space(0), rank(0), dimensions(0),
+			varString(-1),
+			typeClass(H5T_NO_CLASS), dataType(0),
+			precision(0), memType(0), memory(0), memSize(0)
+	{
+		setSpace();
+		setType();
+	}
 
 	/**
 	 * Implementation of LowLevelData methods
 	 */
 	LowLevelData& LowLevelData::operator=(const LowLevelData& x) {
 		if (this != &x) {
+			attrId = x.attrId;
 			space = x.space;
 			rank = x.rank;
 			dimensions = x.dimensions;
+			varString = x.varString;
 			typeClass = x.typeClass;
 			dataType = x.dataType;
 			precision = x.precision;
@@ -64,9 +78,9 @@ namespace hdf5 {
 
 		return *this;
 	}
-	void LowLevelData::setSpace(hid_t inSpace) {
-		space = inSpace;
-		int ret = H5Sget_simple_extent_ndims(inSpace);
+	void LowLevelData::setSpace() {
+		space = H5Aget_space(attrId);
+		int ret = H5Sget_simple_extent_ndims(space);
 		if (ret >= 0) {
 			rank = static_cast<hsize_t>(ret);
 		}
@@ -74,18 +88,64 @@ namespace hdf5 {
 		dimensions = new hsize_t[rank];
 		H5Sget_simple_extent_dims(space, dimensions, 0);
 	}
-	void LowLevelData::setType(hid_t inType) {
-		dataType = inType;
-		precision = H5Tget_precision(dataType);
+	void LowLevelData::setType() {
+		using namespace std;
+
+		dataType = H5Aget_type(attrId);
 		typeClass = H5Tget_class(dataType);
+
+		if (typeClass == H5T_COMPOUND) {
+			precision = 0;
+		}
+		else {
+			precision = H5Tget_precision(dataType);
+		}
 	}
 	void LowLevelData::initMemory() {
 		// calculate and allocate memory to store data
 		free(memory);
-		memSize = precision / 8;
+		if (typeClass == H5T_COMPOUND) {
+			memSize = 0;
+			int nMembers = H5Tget_nmembers(dataType);
+			for (size_t iMember = 0; iMember < static_cast<size_t>(nMembers); ++iMember) {
+				hid_t memberType = H5Tget_member_type(dataType, iMember);
+				H5T_class_t tClass = H5Tget_class(memberType);
+				if (tClass == H5T_COMPOUND) {
+					//
+				}
+				else {
+					memSize += H5Tget_precision(memberType) / 8 * 2;
+				}
+			}
+		}
+		else if (typeClass == H5T_STRING) {
+			htri_t varStr = H5Tis_variable_str(dataType);
+			if (varStr < 0) {
+				throw Exception("H5Tis_variable_str failed");
+			}
+
+			if (!varStr) {
+				memSize = H5Tget_size(dataType) +1; // for the null termination
+			}
+			else {
+				memSize = 42; // dummy
+			}
+		}
+		else {
+			memSize = precision / 8;
+		}
+
+		// handle the increased storage requirements for array structured data
 		for (size_t i = 0; i < rank; ++i)
 			memSize *= dimensions[i];
-		memory = malloc(memSize);
+
+		memory = calloc(1, memSize);
+
+		// read attribute into allocated memory
+		herr_t res = H5Aread(attrId, dataType, memory);
+		if (res < 0) {
+			throw hdf5::Exception("Could not read attribute");
+		}
 	}
 	LowLevelData::~LowLevelData() {
 		free(memory);
@@ -96,23 +156,9 @@ namespace hdf5 {
 	 * Implementation of other stuff
 	 */
 	any llReadAttribute(hid_t attrId) {
-		LowLevelData data;
-
-		// get extensions of the data array
-		data.setSpace(H5Aget_space(attrId));
-
-
-		// get hdf5 type of data element
-		data.setType(H5Aget_type(attrId));
-
-		// init memory
-		data.initMemory();
-
-		// read attribute into allocated memory
-		herr_t res = H5Aread(attrId, data.dataType, data.memory);
-		if (res < 0) {
-			throw 0;
-		}
+		using namespace std;
+		// initialize struct handling all memory management stuff
+		LowLevelData data(attrId);
 
 		/*
 		 *  convert it from a C POD to a C++ type
@@ -121,6 +167,9 @@ namespace hdf5 {
 		switch(data.typeClass) {
 			case H5T_INTEGER:
 			{
+				// allocate memory and read attribute
+				data.initMemory();
+
 				H5T_sign_t sign = H5Tget_sign(data.dataType);
 				if (sign == H5T_SGN_NONE) {
 					// unsigned integers
@@ -147,6 +196,9 @@ namespace hdf5 {
 				break;
 			case H5T_FLOAT:
 			{
+				// allocate memory and read attribute
+				data.initMemory();
+
 				if (data.precision == 32) {
 					result = convertToCPP<float>::get(data); break;
 				}
@@ -171,12 +223,103 @@ namespace hdf5 {
 				result = convertToCPP<char*>::get(data);
 			}
 				break;
+			case H5T_COMPOUND:
+				// allocate memory and read attribute
+				data.initMemory();
+
+				result = llReadCompound(data);
+				break;
 			default:
 				throw Exception("Object::getStorage: Unimplemented HDF5 datatype");
 		}
 
 		return result;
 
+	}
+
+	any llReadCompound(const LowLevelData& data) {
+		using namespace std;
+
+		int nMembers = H5Tget_nmembers(data.dataType);
+		if (nMembers < 0) {
+			return std::string("Could not read compound");
+		}
+
+		map<std::string, any> result;
+		for (size_t iMember = 0; iMember < static_cast<size_t>(nMembers); ++iMember) {
+			char* memberName = H5Tget_member_name(data.dataType, iMember);
+			string name(memberName);
+			free(memberName);
+
+			hid_t memberType = H5Tget_member_type(data.dataType, iMember);
+			size_t tSize = H5Tget_precision(memberType);
+			size_t offset = H5Tget_member_offset(data.dataType, iMember);
+			// start address of this member in memory
+			void* mem = data.memory + offset;
+
+			switch(H5Tget_class(memberType)) {
+				case H5T_INTEGER:
+				{
+					H5T_sign_t sign = H5Tget_sign(memberType);
+					if (sign == H5T_SGN_NONE) {
+						// unsigned integers
+						switch (tSize) {
+							case 8:  result[name] = *static_cast<uint8_t*>(mem); break;
+							case 16: result[name] = *static_cast<uint16_t*>(mem); break;
+							case 32: result[name] = *static_cast<uint32_t*>(mem); break;
+							case 64: result[name] = *static_cast<uint64_t*>(mem); break;
+						}
+					}
+					else if (sign == H5T_SGN_2) {
+						// signed integers
+						switch (tSize) {
+							case 8:  result[name] = *static_cast<int8_t*>(mem); break;
+							case 16: result[name] = *static_cast<int16_t*>(mem); break;
+							case 32: result[name] = *static_cast<int32_t*>(mem); break;
+							case 64: result[name] = *static_cast<int64_t*>(mem); break;
+						}
+					}
+					else {
+						throw Exception("Undefined sign of H5T_INTEGER");
+					}
+				}
+					break;
+				case H5T_FLOAT:
+				{
+					if (tSize == 32) {
+						result[name] = *static_cast<float*>(mem); break;
+					}
+					else if (tSize == 64) {
+						result[name] = *static_cast<double*>(mem); break;
+					}
+					else {
+						std::stringstream ss;
+						ss << "Object::getStlType: H5T_FLOAT with unkown precision " << data.precision << "bits";
+						throw Exception(ss);
+					}
+				}
+					break;
+				case H5T_STRING:
+//				{
+//					H5T_cset_t charSet = H5Tget_cset(data.dataType);
+//					if (charSet != 0) {
+//						std::stringstream ss;
+//						ss << "Object::getStlType: Unknown character encoding type '" << charSet << "'. Currently only US-ASCII is supported.";
+//						throw Exception(ss);
+//					}
+//					result = convertToCPP<char*>::get(data);
+//				}
+					break;
+				default:
+					throw hdf5::Exception("llReadCompound not implemented type");
+			}
+
+		}
+
+//		for (map<std::string, any>::const_iterator it = result.begin(); it != result.end(); ++it) {
+//			cout << " " << it->first << " ---> " << it->second << endl;
+//		}
+		return result;
 	}
 
 	std::string getTypeClassName(hid_t typeID)

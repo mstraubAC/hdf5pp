@@ -27,10 +27,12 @@ namespace hdf5 {
 	typedef boost::any any;
 
 	struct LowLevelData {
+			hid_t attrId;
 			hid_t space;
 			hsize_t rank;
 			hsize_t* dimensions;
 
+			htri_t varString;
 			H5T_class_t typeClass;
 			hid_t dataType;
 			size_t precision;
@@ -38,13 +40,18 @@ namespace hdf5 {
 			void* memory;
 			size_t memSize;
 
-			LowLevelData() : space(0), rank(0), dimensions(0), typeClass(H5T_NO_CLASS), dataType(0), precision(0), memType(0), memory(0), memSize(0) {}
+			LowLevelData() :
+				attrId(0), space(0), rank(0), dimensions(0),
+				varString(-1), typeClass(H5T_NO_CLASS),
+				dataType(0), precision(0), memType(0),
+				memory(0), memSize(0) {}
+			LowLevelData(hid_t attributeId);
 			LowLevelData(const LowLevelData& x) { operator=(x); }
 			~LowLevelData();
 			LowLevelData& operator=(const LowLevelData& x);
 
-			void setSpace(hid_t inSpace);
-			void setType(hid_t inType);
+			void setSpace();
+			void setType();
 			void initMemory();
 
 	};
@@ -94,30 +101,36 @@ namespace hdf5 {
 	};
 
 	template<> struct convertToCPP<char*> {
-			static any get(const LowLevelData& data) {
+			static any get(LowLevelData& data) {
+				using namespace std;
 				any result;
-				if (data.dimensions[0] == 1) {
-					char* tmp = static_cast<char*>(data.memory);
-					result = std::string(tmp);
-				}
-				else if (data.rank == 1)
-				{
-					// store it into stl vector
-					std::vector<std::string> tmp;
-					tmp.reserve(data.dimensions[0]);
-					const char** x = static_cast<const char**>(data.memory);
-					for (size_t i = 0; i < data.dimensions[0]; ++i) {
-						tmp.push_back(std::string(x[i]));
+
+				if (data.rank == 0) {
+					if (!data.varString) {
+						// allocate memory and read attribute
+						data.initMemory();
+						char* tmp = static_cast<char*>(data.memory);
+						result = std::string(tmp);
 					}
-					result = tmp;
+					else {
+						char* cString;
+						herr_t status = H5Aread(data.attrId, data.dataType, &cString);
+						if (status < 0)
+							throw Exception("convertToCPP<char*> failed to read variable length string");
+
+						result = std::string(cString);
+						free(cString);
+					}
 				}
 				else {
-					throw Exception("You wanted to read a data structure from a rank higher than 4, which is not yet supported.");
+					cout << "Error: string not from rank 0!!!!!" << endl;
 				}
-
+				cout << "--> string=" << result << endl;
 				return result;
 			}
 	};
+
+	any llReadCompound(const LowLevelData& data);
 
 	any llReadAttribute(hid_t attrId);
 
