@@ -30,10 +30,16 @@ namespace hdf5
 
 
 			Object::Ptr getObject(const std::string& objectName);
-			const Object::Ptr getObject(const std::string& objectName) const;
+			Object::ConstPtr getObject(const std::string& objectName) const;
 
-			Object& operator()(const std::string& objectName) { return *(getObject(objectName).get()); };
-			const Object& operator()(const std::string& objectName) const { return *(getObject(objectName).get()); };
+			Dataset::Ptr getDataSet(const std::string& dsName);
+			Dataset::ConstPtr getDataSet(const std::string& dsName) const;
+
+			Group::Ptr getGroup(const std::string& groupName);
+			Group::ConstPtr getGroup(const std::string& groupName) const;
+
+			Group& operator()(const std::string& objectName) { return *(getGroup(objectName).get()); }
+			const Group& operator()(const std::string& objectName) const { return *(getGroup(objectName).get()); }
 
 			/// returns the number hdf5 objects stored in this one
 			inline size_t getNumObjects() const { return fDaughters.size(); }
@@ -45,7 +51,6 @@ namespace hdf5
 
 			inline ObjectIterator objectsBegin() { return fDaughters.begin(); }
 			inline ObjectIterator objectsEnd() { return fDaughters.end(); }
-
 
 			/**
 			 * Unlinks the an object from our namespace

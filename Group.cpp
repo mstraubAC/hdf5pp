@@ -52,13 +52,57 @@ namespace hdf5
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
 	}
 
-	const Object::Ptr Group::getObject(const std::string& objectName) const
+	Object::ConstPtr Group::getObject(const std::string& objectName) const
 	{
 		ObjectConstIterator it = fDaughters.find(objectName);
 		if (it != fDaughters.end())
 			return it->second;
 		else
 			throw std::out_of_range("Object \"" + objectName + "\" not found!");
+	}
+
+	Dataset::Ptr Group::getDataSet(const std::string& dsName) {
+		Object::Ptr obj = getObject(dsName);
+		Dataset::Ptr g = boost::dynamic_pointer_cast<hdf5::Dataset>(obj);
+		if (g.get()) {
+			return g;
+		}
+		else {
+			throw Exception("Requested dataset \"" + dsName + "\" does not exist");
+		}
+	}
+
+	Dataset::ConstPtr Group::getDataSet(const std::string& dsName) const {
+		Object::ConstPtr obj = getObject(dsName);
+		Dataset::ConstPtr g = boost::dynamic_pointer_cast<const hdf5::Dataset>(obj);
+		if (g.get()) {
+			return g;
+		}
+		else {
+			throw Exception("Requested dataset \"" + dsName + "\" does not exist");
+		}
+	}
+
+	Group::Ptr Group::getGroup(const std::string& groupName) {
+		Object::Ptr obj = getObject(groupName);
+		Group::Ptr g = boost::dynamic_pointer_cast<Group>(obj);
+		if (g.get()) {
+			return g;
+		}
+		else {
+			throw Exception("Requested group \"" + groupName + "\" does not exist");
+		}
+	}
+
+	Group::ConstPtr Group::getGroup(const std::string& groupName) const {
+		Object::ConstPtr obj = getObject(groupName);
+		Group::ConstPtr g = boost::dynamic_pointer_cast<const Group>(obj);
+		if (g.get()) {
+			return g;
+		}
+		else {
+			throw Exception("Requested group \"" + groupName + "\" does not exist");
+		}
 	}
 
 	bool Group::deleteObject(const std::string& name)
