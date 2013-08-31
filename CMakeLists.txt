@@ -37,6 +37,43 @@ set(LIBRARIES boost_regex boost_program_options xerces-c hdf5)
 ## define subdirectories
 set(LDFLAGS "${LDFLAGS}")
 
-# build modules for subdirectories
-add_executable(hdfTest hdfTest.cpp Object.cpp File.cpp Group.cpp Dataset.cpp hdfLLReading.cpp)
-target_link_libraries(hdfTest ${LIBRARIES} "${LDFLAGS}")
+# buildin library and defining header files for installation purpose
+SET (hdf5++_HEADERS
+	ContainerInterface.h
+	DataConverter.h
+	Dataset.h
+	DataTypes.h
+	Exception.h
+	File.h
+   	Group.h
+	hdfLLReading.h
+	Object.h
+	TypeRegistry.h)
+SET (hdf5++_OOFILES
+	Object.cpp
+	File.cpp
+	Group.cpp
+	Dataset.cpp
+	hdfLLReading.cpp
+	)
+
+add_library(hdf5++ SHARED ${hdf5++_OOFILES} )
+
+
+# building and linking executable test file
+add_executable(hdfTest hdfTest.cpp)
+target_link_libraries(hdfTest ${LIBRARIES} "${LDFLAGS}" hdf5++)
+
+## set install dirs
+IF (DEFINED prefix)
+	SET (prefix ${prefix} CACHE PATH "Installation directory")
+ELSE (DEFINED prefix)
+	SET (prefix /usr/local CACHE PATH "Installation directory")
+ENDIF (DEFINED prefix)
+
+SET (CMAKE_INSTALL_PREFIX ${prefix} CACHE INTERNAL "")
+
+# install library
+INSTALL (TARGETS hdf5++ LIBRARY DESTINATION lib)
+# install headers
+INSTALL (FILES ${hdf5++_HEADERS} DESTINATION include/hdf5++)
