@@ -29,6 +29,7 @@ namespace hdf5
 		public:
 			typedef std::string TypeName;
 			typedef boost::shared_ptr<Object> Ptr;
+			typedef boost::shared_ptr<Object> ConstPtr;
 			typedef typename std::map<std::string, Attribute> AttributeMap;
 			typedef AttributeMap::const_iterator AttributeConstIterator;
 			typedef AttributeMap::iterator AttributeIterator;
