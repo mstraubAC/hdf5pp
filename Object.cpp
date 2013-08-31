@@ -54,7 +54,7 @@ namespace hdf5
 			throw Exception("Could not retrieve number of attributes");
 		}
 
-		for (size_t iAttr = 0; iAttr < nAttrs; ++iAttr) {
+		for (size_t iAttr = 0; iAttr < static_cast<size_t>(nAttrs); ++iAttr) {
 			char* attrName;
 			char objName[] = ".";
 			ssize_t nameLen = H5Aget_name_by_idx(fObjectId, objName, H5_INDEX_NAME, H5_ITER_INC, iAttr, attrName, 0, H5P_DEFAULT);
