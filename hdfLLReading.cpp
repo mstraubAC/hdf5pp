@@ -255,7 +255,7 @@ namespace hdf5 {
 			size_t tSize = H5Tget_precision(memberType);
 			size_t offset = H5Tget_member_offset(data.dataType, iMember);
 			// start address of this member in memory
-			void* mem = data.memory + offset;
+			void* mem = static_cast<void*>(static_cast<uint8_t*>(data.memory) + offset);
 
 			switch(H5Tget_class(memberType)) {
 				case H5T_INTEGER:
