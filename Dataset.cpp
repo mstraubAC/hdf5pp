@@ -61,9 +61,6 @@ namespace hdf5
 			updateAttributes();
 		}
 
-		hid_t type = H5Dget_type(objectId);
-		cout << "DataSet: Type=" << getTypeClassName(type) << endl;
-
 //		updateDataset(objectId);
 	}
 
