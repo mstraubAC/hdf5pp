@@ -22,8 +22,8 @@ namespace hdf5
 
 	Dataset::~Dataset()
 	{
-		H5Dclose(fObjectId);
 		H5Sclose(fSpace);
+		H5Dclose(fObjectId);
 	}
 
 	size_t Dataset::getRank() const
