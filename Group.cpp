@@ -37,9 +37,9 @@ namespace hdf5
 	{
 		fName = groupName;
 		fType = Object::ObjectType::Group;
-		cout << "Group::Group: Calling updateGroup(" << groupName << ", " << objectId << ")" << endl;
+//		cout << "Group::Group: Calling updateGroup(" << groupName << ", " << objectId << ")" << endl;
 		updateGroup(objectId);
-		cout << "Group::Group: Calling updateAttributes()" << endl;
+//		cout << "Group::Group: Calling updateAttributes()" << endl;
 		updateAttributes();
 	}
 
@@ -129,7 +129,7 @@ namespace hdf5
 			throw Exception("Group::updateGroup(): Could not retrieve number of objects in group");
 
 		for (size_t iObj = 0; iObj < nObj; ++iObj) {
-			cout << " -------" << endl;
+//			cout << " -------" << endl;
 			char* objName;
 			ssize_t nameSize = H5Gget_objname_by_idx(groupId, iObj, objName, 0);
 			if (nameSize > -1) {
@@ -149,7 +149,7 @@ namespace hdf5
 						break;
 					case H5G_DATASET:
 						daughterId = H5Dopen1(groupId, sObjectName.c_str());
-						cout << "Group::updateGroup(" << groupId << "): Found H5G_DATASET (named '" << sObjectName << "'), id=" << daughterId << endl;
+//						cout << "Group::updateGroup(" << groupId << "): Found H5G_DATASET (named '" << sObjectName << "'), id=" << daughterId << endl;
 						objPtr = Object::Ptr(new hdf5::Dataset(daughterId, sObjectName));
 						break;
 					case H5G_TYPE:
