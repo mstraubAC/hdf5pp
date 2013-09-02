@@ -57,14 +57,14 @@ namespace hdf5
 		for (size_t iAttr = 0; iAttr < static_cast<size_t>(nAttrs); ++iAttr) {
 			char* attrName;
 			char objName[] = ".";
-			ssize_t nameLen = H5Aget_name_by_idx(fObjectId, objName, H5_INDEX_NAME, H5_ITER_INC, iAttr, attrName, 0, H5P_DEFAULT);
+			ssize_t nameLen = H5Aget_name_by_idx(fObjectId, objName, H5_INDEX_NAME, H5_ITER_INC, iAttr, 0, 0, H5P_DEFAULT);
 
 			if (nameLen > 0) {
 				// fetch name of this attribute
 				attrName = new char[++nameLen];
 				H5Aget_name_by_idx(fObjectId, objName, H5_INDEX_NAME, H5_ITER_INC, iAttr, attrName, nameLen, H5P_DEFAULT);
 				string sAttrName(attrName);
-				delete attrName;
+				delete[] attrName;
 
 				// open attribute
 				hid_t attrId = H5Aopen_by_idx(fObjectId, objName, H5_INDEX_NAME, H5_ITER_INC, iAttr, H5P_DEFAULT, H5P_DEFAULT);
@@ -74,6 +74,7 @@ namespace hdf5
 				}
 
 				// parse type info
+//				cout << "Reading attribute: " << sAttrName << endl;
 				fAttributes[sAttrName] = llReadAttribute(attrId);
 
 				// close attribute
