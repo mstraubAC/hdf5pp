@@ -131,13 +131,13 @@ namespace hdf5
 		for (size_t iObj = 0; iObj < nObj; ++iObj) {
 //			cout << " -------" << endl;
 			char* objName;
-			ssize_t nameSize = H5Gget_objname_by_idx(groupId, iObj, objName, 0);
+			ssize_t nameSize = H5Gget_objname_by_idx(groupId, iObj, 0, 0);
 			if (nameSize > -1) {
 				nameSize++; // to get termination character, too
 				objName = new char[nameSize];
 				H5Gget_objname_by_idx(groupId, iObj, objName, nameSize);
 				string sObjectName(objName);
-				delete objName;
+				delete[] objName;
 
 				int objType = H5Gget_objtype_by_idx(groupId, iObj);
 				hid_t daughterId = -1;
