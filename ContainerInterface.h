@@ -106,7 +106,7 @@ namespace hdf5 {
 			 * @param dataSpace HDF5 identifier fitting the container
 			 */
 			static void write(const Container& src, hid_t dataSet, hid_t dataSpace) {
-				std::cout << "hdf5::ContainerInterface< std::vector<..> >::write()" << std::endl;
+//				std::cout << "hdf5::ContainerInterface< std::vector<..> >::write()" << std::endl;
 
 				// checking compatibility of hdf5 target and the c++ src object
 				if (!checkCompatibility(src, dataSet, dataSpace)) {
@@ -150,7 +150,7 @@ namespace hdf5 {
 			 */
 			static void read(Container& dst, hid_t dataSet, hid_t dataSpace) {
 				const size_t NumDims = 1;
-				std::cout << "hdf5::ContainerInterface< std::vector<..> >::read()" << std::endl;
+//				std::cout << "hdf5::ContainerInterface< std::vector<..> >::read()" << std::endl;
 
 				if (NumDims != H5Sget_simple_extent_ndims(dataSpace)) {
 					throw Exception("hdf5::ContainerInterface< std::vector<..> >::read(): Dimensions of HDF5 and target container does not match");
@@ -251,7 +251,7 @@ namespace hdf5 {
 			 * @param dataSpace HDF5 identifier fitting the container
 			 */
 			static void write(const Container& src, hid_t dataSet, hid_t dataSpace) {
-				std::cout << "hdf5::ContainerInterface< std::list<..> >::write()" << std::endl;
+//				std::cout << "hdf5::ContainerInterface< std::list<..> >::write()" << std::endl;
 
 				// checking compatibility of hdf5 target and the c++ src object
 				if (!checkCompatibility(src, dataSet, dataSpace)) {
@@ -286,7 +286,7 @@ namespace hdf5 {
 			 */
 			static void read(Container& dst, hid_t dataSet, hid_t dataSpace) {
 				const size_t NumDims = 1;
-				std::cout << "hdf5::ContainerInterface< std::list<..> >::read()" << std::endl;
+//				std::cout << "hdf5::ContainerInterface< std::list<..> >::read()" << std::endl;
 
 				if (NumDims != H5Sget_simple_extent_ndims(dataSpace)) {
 					throw Exception("hdf5::ContainerInterface< std::list<..> >::read(): Dimensions of HDF5 and target container does not match");
@@ -423,7 +423,7 @@ namespace hdf5 {
 
 			static void read(Container& dst, hid_t dataSet, hid_t dataSpace) {
 				const size_t NumDims = 1;
-				std::cout << "hdf5::ContainerInterface< std::mapr<..> >::read()" << std::endl;
+//				std::cout << "hdf5::ContainerInterface< std::mapr<..> >::read()" << std::endl;
 
 				if (static_cast<int>(NumDims) != H5Sget_simple_extent_ndims(dataSpace)) {
 					throw Exception("hdf5::ContainerInterface< std::map<..> >::read(): Dimensions of HDF5 and target container does not match");
@@ -466,7 +466,7 @@ namespace hdf5 {
 					DataType<Value>::freePOD(buffer[i].v);
 				}
 
-				std::cout << "ContainerInterface< std::map<Key, Value, ..> >::read(..): freeing buffer" << std::endl;
+//				std::cout << "ContainerInterface< std::map<Key, Value, ..> >::read(..): freeing buffer" << std::endl;
 				free(buffer);
 			}
 	};
@@ -571,7 +571,7 @@ namespace hdf5 {
 		 * @param dataSpace HDF5 identifier fitting the container
 		 */
 		static void write(const Container& src, hid_t ds, hid_t space) {
-			std::cout << "boost::multi_array::write()" << std::endl;
+//			std::cout << "boost::multi_array::write()" << std::endl;
 
 			if (!checkCompatibility(src, ds, space)) {
 				throw Exception("ContainerInterface< boost::multi_array<...> >::write(): Type compatibility check failed");
