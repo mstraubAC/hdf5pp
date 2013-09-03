@@ -55,6 +55,7 @@ namespace hdf5
 
 	File::File(const std::string& fileName): fFile(-1)
 	{
+		fType = ObjectType::File;
 		openFile(OpenFile(fileName));
 	}
 
