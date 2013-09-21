@@ -527,11 +527,43 @@ namespace hdf5 {
 		}
 
 		static bool checkCompatibility(const Container& src, hid_t dataSet, hid_t hdfMemLayout) {
+			using namespace std;
 			// type match
-			htri_t type = H5Tequal(DataType<ElementType>::hdfType(), H5Dget_type(dataSet));
-			if (type < 1) {
-				throw Exception("HDF5 and Container element type declaration does not match");
-			}
+			//TODO: %%%%%%%%%%%%%%%%%%%%%%%%55
+//			htri_t type = H5Tequal(DataType<ElementType>::hdfType(), H5Dget_type(dataSet));
+//			if (type < 1) {
+//				cout << "Type on file:" << endl;
+//				hid_t t = H5Dget_type(dataSet);
+//				if (H5Tget_class(t) == H5T_COMPOUND) {
+//					size_t nMembers = H5Tget_nmembers(t);
+//					for (size_t iMember = 0; iMember < nMembers; ++iMember) {
+//						hid_t memberType = H5Tget_member_type(t, iMember);
+//						size_t memberOffset = H5Tget_member_offset(t, iMember);
+//						char* memberName = H5Tget_member_name(t, iMember);
+//						cout << iMember << ": " << memberName <<
+//								", " << getTypeClassName(memberType) <<
+//								" @ offset=" << memberOffset << endl;
+//						free(memberName);
+//					}
+//				}
+//
+//				cout << "type in memory:" << endl;
+//				t = DataType<ElementType>::hdfType();
+//				if (H5Tget_class(t) == H5T_COMPOUND) {
+//					size_t nMembers = H5Tget_nmembers(t);
+//					for (size_t iMember = 0; iMember < nMembers; ++iMember) {
+//						hid_t memberType = H5Tget_member_type(t, iMember);
+//						size_t memberOffset = H5Tget_member_offset(t, iMember);
+//						char* memberName = H5Tget_member_name(t, iMember);
+//						cout << iMember << ": " << memberName <<
+//								", " << getTypeClassName(memberType) <<
+//								" @ offset=" << memberOffset << endl;
+//						free(memberName);
+//					}
+//				}
+//
+//				throw Exception("HDF5 and Container element type declaration does not match");
+//			}
 
 			// check if rank matches
 			int rank = H5Sget_simple_extent_ndims(hdfMemLayout);
