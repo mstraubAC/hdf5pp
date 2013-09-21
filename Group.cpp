@@ -11,6 +11,7 @@
 #include "File.h"
 #include <hdf5.h>
 #include <stdexcept>
+#include <iostream>
 
 using namespace std;
 
@@ -20,6 +21,7 @@ namespace hdf5
 	Group::Group()
 	{
 		// TODO Auto-generated constructor stub
+		fObjectId = -1;
 		fType = Object::ObjectType::Group;
 	}
 
@@ -28,7 +30,8 @@ namespace hdf5
 		// since all daughters must be closed before we close our own group
 		// we have to clear the map on our own
 		fDaughters.clear();
-		if (fType == ObjectType::Group) {
+//		cout << "Group::~Group: fType=" << fType << " / ObjectType::Group=" << ObjectType::Group << " / ObjectType::File=" << ObjectType::File << " / fObjectId=" << fObjectId << endl;
+		if (fType == ObjectType::Group && fObjectId >= 0) {
 			H5Gclose(fObjectId);
 		}
 	}
