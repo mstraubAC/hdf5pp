@@ -18,6 +18,7 @@
 namespace hdf5
 {
 	typedef any Attribute;
+	typedef std::map<std::string, Attribute> CompoundAttribute;
 
 //	struct Type {
 //			std::type_info typeInfo;
