@@ -29,7 +29,7 @@ string(REGEX REPLACE "^[ \t]+|[ \t]+$" "" LDFLAGS "${LDFLAGS}")
 
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O3 -march=native -mtune=native --fast-math -Wall -std=c++0x -Wno-deprecated")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Wall -std=c++0x -Wno-deprecated")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Wall -std=c++0x -Wno-deprecated -Xlinker -zmuldefs")
 
 ## define libraries and programs
 set(LIBRARIES boost_regex boost_program_options xerces-c hdf5)
