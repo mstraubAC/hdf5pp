@@ -48,7 +48,7 @@ SET (hdf5++_HEADERS
    	Group.h
 	hdfLLReading.h
 	Object.h
-	TypeRegistry.h)
+)
 SET (hdf5++_OOFILES
 	Object.cpp
 	File.cpp
